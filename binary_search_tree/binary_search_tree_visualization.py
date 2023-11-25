@@ -21,7 +21,8 @@ class BST:
             bg=BACKGROUND_COLOR,
         )
         self.canvas.pack(side=TOP, fill=BOTH, expand=2)
-
+        self.lbl_number_of_nodes = None
+        self.lbl_tree_height = None
         self.generate_random_tree_btn = None
         self.insert_btn = None
         self.delete_btn = None
@@ -29,7 +30,12 @@ class BST:
         self.input_field = None
         self.root_node = None
 
+        self.traversing_result = []
+        self.index = 0
+
+        self.create_heading()
         self.create_some_buttons()
+        self.create_traversing_result()
         self.center_window(WINDOW_WIDTH, WINDOW_HEIGHT)
 
     # center window
@@ -40,8 +46,28 @@ class BST:
         y = (screen_height - height) // 4
         self.window.geometry(f"{width}x{height}+{x}+{y}")
 
+    def create_heading(self):
+        self.lbl_number_of_nodes = Label(
+            self.window,
+            text="Number of nodes: " + str(self.count_nodes(self.root_node)),
+            font=("Arial 15"),
+            fg="white",
+            bg=BACKGROUND_COLOR,
+            bd=0,
+        )
+        self.lbl_number_of_nodes.place(x=850, y=10)
+
+        self.lbl_tree_height = Label(
+            self.window,
+            text="Tree height: " + str(self.count_nodes(self.root_node)),
+            font=("Arial 15"),
+            fg="white",
+            bg=BACKGROUND_COLOR,
+            bd=0,
+        )
+        self.lbl_tree_height.place(x=850, y=40)
+
     def create_some_buttons(self):
-        pass
         self.generate_random_tree_btn = HoverButton(
             self.window,
             text="Generate random tree",
@@ -93,12 +119,44 @@ class BST:
         self.input_field = Entry(
             self.window,
             font=("Arial 15"),
-            width=18,
             bd=4,
             relief=GROOVE,
         )
         self.input_field.pack(side=LEFT, fill=X, expand=1)
         self.input_field.focus()
+
+        self.pre_order_btn = HoverButton(
+            self.window,
+            text="Pre Order",
+            font=("Arial 15"),
+            cursor="hand2",
+            bd=4,
+            relief=GROOVE,
+            command=self.print_tree_pre_order_traversal,
+        )
+        self.pre_order_btn.place(x=680, y=700)
+
+        self.in_order_btn = HoverButton(
+            self.window,
+            text="In Order",
+            font=("Arial 15"),
+            cursor="hand2",
+            bd=4,
+            relief=GROOVE,
+            command=self.print_tree_in_order_traversal,
+        )
+        self.in_order_btn.place(x=805, y=700)
+
+        self.post_order_btn = HoverButton(
+            self.window,
+            text="Post Order",
+            font=("Arial 15"),
+            cursor="hand2",
+            bd=4,
+            relief=GROOVE,
+            command=self.print_tree_post_order_traversal,
+        )
+        self.post_order_btn.place(x=910, y=700)
 
     def calculate_left_child_position(
         self, parent_position_x, parent_position_y, child_depth
@@ -210,23 +268,21 @@ class BST:
             number_of_insert = randint(MIN_VALUE, MAX_VALUE)
 
         for x in range(number_of_insert):
-            node_value = randint(MIN_VALUE, MAX_VALUE)
+            node_value = randint(MIN_VALUE + 1, MAX_VALUE + 1)
             self.root_node = self.insert_node_without_animation(
                 self.root_node, node_value, 0
             )
 
         root_position_x = WINDOW_WIDTH / 2
         root_position_y = Y_PADDING
-
+        self.lbl_number_of_nodes.config(
+            text=str("Number of nodes: " + str(self.count_nodes(self.root_node)))
+        )
+        self.lbl_tree_height.config(
+            text=str("Tree height: " + str(self.count_tree_height(self.root_node)))
+        )
         self.canvas.delete("all")
-
         self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
-
-    def print_tree(self, root_node):
-        if root_node is not None:
-            self.print_tree(root_node.left_child)
-            print(root_node.value, end=" ")
-            self.print_tree(root_node.right_child)
 
     def insert_node(
         self, root_node, value, root_position_x, root_position_y, node_depth
@@ -248,6 +304,7 @@ class BST:
             HIGHLIGHT_TEXT_COLOR,
             FONT_SIZE,
         )
+
         self.window.update()
         time.sleep(ANIMATION_DELAY)
 
@@ -313,6 +370,192 @@ class BST:
 
         return root_node
 
+    def print_tree_pre_order_traversal(self):
+        root_position_x = WINDOW_WIDTH / 2
+        root_position_y = Y_PADDING
+        self.disable_UI()
+        if self.index != 0:
+            self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
+        self.index = 0
+        self.clear_traversing_result()
+        self.print_tree_pre_order(self.root_node, root_position_x, root_position_y, 0)
+        self.enable_UI()
+
+    def print_tree_pre_order(
+        self, root_node, root_position_x, root_position_y, node_depth
+    ):
+        if root_node is None:
+            return
+
+        self.create_oval_with_text(
+            root_position_x,
+            root_position_y,
+            NODE_RADIUS,
+            "red",
+            root_node.value,
+            TEXT_COLOR,
+            FONT_SIZE,
+        )
+
+        self.traversing_result[self.index].config(text=str(root_node.value))
+        self.index += 1
+
+        time.sleep(ANIMATION_DELAY)
+        self.window.update()
+
+        if root_node.left_child is not None:
+            (
+                left_child_position_x,
+                left_child_position_y,
+            ) = self.calculate_left_child_position(
+                root_position_x, root_position_y, node_depth + 1
+            )
+
+            self.print_tree_pre_order(
+                root_node.left_child,
+                left_child_position_x,
+                left_child_position_y,
+                node_depth + 1,
+            )
+
+        if root_node.right_child is not None:
+            (
+                right_child_position_x,
+                right_child_position_y,
+            ) = self.calculate_right_child_position(
+                root_position_x, root_position_y, node_depth + 1
+            )
+            self.print_tree_pre_order(
+                root_node.right_child,
+                right_child_position_x,
+                right_child_position_y,
+                node_depth + 1,
+            )
+
+    def print_tree_in_order_traversal(self):
+        root_position_x = WINDOW_WIDTH / 2
+        root_position_y = Y_PADDING
+        self.disable_UI()
+        if self.index != 0:
+            self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
+        self.index = 0
+        self.clear_traversing_result()
+        self.print_tree_in_order(self.root_node, root_position_x, root_position_y, 0)
+        self.enable_UI()
+
+    def print_tree_in_order(
+        self, root_node, root_position_x, root_position_y, node_depth
+    ):
+        if root_node is None:
+            return
+
+        if root_node.left_child is not None:
+            (
+                left_child_position_x,
+                left_child_position_y,
+            ) = self.calculate_left_child_position(
+                root_position_x, root_position_y, node_depth + 1
+            )
+
+            self.print_tree_in_order(
+                root_node.left_child,
+                left_child_position_x,
+                left_child_position_y,
+                node_depth + 1,
+            )
+
+        self.create_oval_with_text(
+            root_position_x,
+            root_position_y,
+            NODE_RADIUS,
+            "red",
+            root_node.value,
+            TEXT_COLOR,
+            FONT_SIZE,
+        )
+
+        self.traversing_result[self.index].config(text=str(root_node.value))
+        self.index += 1
+
+        time.sleep(ANIMATION_DELAY)
+        self.window.update()
+
+        if root_node.right_child is not None:
+            (
+                right_child_position_x,
+                right_child_position_y,
+            ) = self.calculate_right_child_position(
+                root_position_x, root_position_y, node_depth + 1
+            )
+            self.print_tree_in_order(
+                root_node.right_child,
+                right_child_position_x,
+                right_child_position_y,
+                node_depth + 1,
+            )
+
+    def print_tree_post_order_traversal(self):
+        root_position_x = WINDOW_WIDTH / 2
+        root_position_y = Y_PADDING
+        self.disable_UI()
+        if self.index != 0:
+            self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
+        self.index = 0
+        self.clear_traversing_result()
+        self.print_tree_post_order(self.root_node, root_position_x, root_position_y, 0)
+        self.enable_UI()
+
+    def print_tree_post_order(
+        self, root_node, root_position_x, root_position_y, node_depth
+    ):
+        if root_node is None:
+            return
+
+        if root_node.left_child is not None:
+            (
+                left_child_position_x,
+                left_child_position_y,
+            ) = self.calculate_left_child_position(
+                root_position_x, root_position_y, node_depth + 1
+            )
+
+            self.print_tree_post_order(
+                root_node.left_child,
+                left_child_position_x,
+                left_child_position_y,
+                node_depth + 1,
+            )
+
+        if root_node.right_child is not None:
+            (
+                right_child_position_x,
+                right_child_position_y,
+            ) = self.calculate_right_child_position(
+                root_position_x, root_position_y, node_depth + 1
+            )
+            self.print_tree_post_order(
+                root_node.right_child,
+                right_child_position_x,
+                right_child_position_y,
+                node_depth + 1,
+            )
+
+        self.create_oval_with_text(
+            root_position_x,
+            root_position_y,
+            NODE_RADIUS,
+            "red",
+            root_node.value,
+            TEXT_COLOR,
+            FONT_SIZE,
+        )
+
+        self.traversing_result[self.index].config(text=str(root_node.value))
+        self.index += 1
+
+        time.sleep(ANIMATION_DELAY)
+        self.window.update()
+
     def create_oval_with_text(
         self, center_x, center_y, radius, oval_color, text, text_color, font_size
     ):
@@ -331,6 +574,7 @@ class BST:
             fill=text_color,
             font=("Arial", int(font_size), "bold"),
         )
+        return [oval, text]
 
     def is_valid_input(self, value) -> bool:
         try:
@@ -378,6 +622,10 @@ class BST:
         )
 
     def insert_node_to_tree(self):
+        root_position_x = WINDOW_WIDTH / 2
+        root_position_y = Y_PADDING
+        self.canvas.delete("all")
+        self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
         value = self.input_field.get()
         if not self.is_valid_input(value):
             return
@@ -397,9 +645,13 @@ class BST:
 
         self.canvas.delete("all")
         self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
-
+        self.lbl_number_of_nodes.config(
+            text=str("Number of nodes: " + str(self.count_nodes(self.root_node)))
+        )
+        self.lbl_tree_height.config(
+            text=str("Tree height: " + str(self.count_tree_height(self.root_node)))
+        )
         self.enable_UI()
-        self.print_tree(self.root_node)
 
     def search_node(
         self, root_node, value, root_position_x, root_position_y, node_depth
@@ -506,6 +758,10 @@ class BST:
             time.sleep(ANIMATION_DELAY)
 
     def search_node_on_tree(self):
+        root_position_x = WINDOW_WIDTH / 2
+        root_position_y = Y_PADDING
+        self.canvas.delete("all")
+        self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
         value = self.input_field.get()
 
         if not self.is_valid_input(value):
@@ -861,6 +1117,10 @@ class BST:
         return root_node
 
     def delete_node_on_tree(self):
+        root_position_x = WINDOW_WIDTH / 2
+        root_position_y = Y_PADDING
+        self.canvas.delete("all")
+        self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
         value = self.input_field.get()
         if not self.is_valid_input(value):
             return
@@ -884,8 +1144,57 @@ class BST:
         self.canvas.delete("all")
 
         self.draw_tree(self.root_node, root_position_x, root_position_y, 0)
-
+        self.lbl_number_of_nodes.config(
+            text=str("Number of nodes: " + str(self.count_nodes(self.root_node)))
+        )
+        self.lbl_tree_height.config(
+            text=str("Tree height: " + str(self.count_tree_height(self.root_node)))
+        )
         self.enable_UI()
+
+    def create_traversing_result(self):
+        number_of_nodes = 29
+        for i in range(number_of_nodes):
+            self.traversing_result.append(i)
+        start = 10
+        space = 40
+        end_line = 610
+        for i in range(number_of_nodes):
+            self.traversing_result[i] = Label(
+                self.window,
+                bg="lightblue",
+                fg="red",
+                font=("Arial", 12, "bold"),
+                bd=2,
+                width=3,
+                relief=SUNKEN,
+            )
+            self.traversing_result[i].place(x=start, y=end_line)
+            start += space
+            if start > 1150:
+                start = 10
+                end_line += 30
+
+    def clear_traversing_result(self):
+        for i in range(len(self.traversing_result)):
+            self.traversing_result[i].config(text="")
+
+    def count_nodes(self, root_node):
+        if root_node is None:
+            return 0
+        return (
+            1
+            + self.count_nodes(root_node.left_child)
+            + self.count_nodes(root_node.right_child)
+        )
+
+    def count_tree_height(self, root_node):
+        if root_node is None:
+            return 0
+        else:
+            left_height = self.count_tree_height(root_node.left_child)
+            right_height = self.count_tree_height(root_node.right_child)
+            return max(left_height, right_height) + 1
 
     def disable_UI(self):
         self.generate_random_tree_btn.config(state=DISABLED)
@@ -893,6 +1202,9 @@ class BST:
         self.delete_btn.config(state=DISABLED)
         self.search_btn.config(state=DISABLED)
         self.input_field.config(state=DISABLED)
+        self.pre_order_btn.config(state=DISABLED)
+        self.in_order_btn.config(state=DISABLED)
+        self.post_order_btn.config(state=DISABLED)
 
     def enable_UI(self):
         self.generate_random_tree_btn.config(state=NORMAL)
@@ -900,6 +1212,9 @@ class BST:
         self.delete_btn.config(state=NORMAL)
         self.search_btn.config(state=NORMAL)
         self.input_field.config(state=NORMAL)
+        self.pre_order_btn.config(state=NORMAL)
+        self.in_order_btn.config(state=NORMAL)
+        self.post_order_btn.config(state=NORMAL)
 
 
 if __name__ == "__main__":
